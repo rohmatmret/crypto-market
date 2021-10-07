@@ -1,25 +1,38 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { Box, Container, IconButton, useColorMode } from "@chakra-ui/react";
+import { useEffect } from "react";
+import Home from "./pages/Home"
+import { SunIcon } from "@chakra-ui/icons";
 
-function App() {
+function SwitchTheme() {
+  const { colorMode, toggleColorMode } = useColorMode()
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+    <header>
+        <IconButton
+          onClick={toggleColorMode}
+          variant="outline"
+          colorScheme="teal"
+          aria-label="Send email"
+          icon={<SunIcon >
+          
+          </SunIcon>}
         >
-          Learn React
-        </a>
-      </header>
-    </div>
+          {colorMode === "light" ? "Dark" : "Light"}
+        </IconButton>
+    </header>
+  )
+}
+function App() {
+  useEffect(() => {
+    document.title = "Crypto Market"
+  }, [])
+  return (
+    <Container maxW="container.xl" centerContent>
+      <SwitchTheme />
+      <Box padding="4" maxW="3xl">
+        Market Crypto
+      </Box>
+      <Home />
+    </Container>
   );
 }
 
