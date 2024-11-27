@@ -5,17 +5,12 @@ import {
   Image,
   Spinner,
   Stack,
-  Table,
-  Tbody,
-  Td,
+  Box,
   Text,
-  Th,
-  Thead,
-  Tr,
+  useBreakpointValue,
 } from "@chakra-ui/react";
 import React, { useState } from "react";
 import { QueryClient, QueryClientProvider, useQuery } from "react-query";
-import { dehydrate } from "react-query/hydration";
 
 type Price = {
   id: string;
@@ -28,7 +23,6 @@ type Price = {
   market_cap: number;
 };
 
-
 const getMarket = async (page = 1) => {
   const URL = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=idr&per_page=10&page=${page}`;
   const response = await fetch(URL);
@@ -39,16 +33,18 @@ const getMarket = async (page = 1) => {
 };
 
 const formatNumber = (num: number) => {
-  let formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'IDR',
+  const formatter = new Intl.NumberFormat("en-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0, // Remove the fractional part
+    maximumFractionDigits: 0, // Remove the fractional part
   });
 
-  return formatter.format(num)
+  return formatter.format(num);
 };
 
 const Percentage = ({ percent }: { percent: number }) => {
-  const formatPercent = Intl.NumberFormat("en-US", {
+  const formatPercent = Intl.NumberFormat("en-ID", {
     style: "percent",
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
@@ -64,21 +60,7 @@ const Percentage = ({ percent }: { percent: number }) => {
   return <Text color={color}>{formatPercent}</Text>;
 };
 
-
-// SSR with Hydrate
-export async function getStaticProps() {
-  const queryClient = new QueryClient();
-  await queryClient.prefetchQuery(["market", 1], () => getMarket());
-
-  return {
-    props: {
-      dehydratedState: dehydrate(queryClient),
-    },
-  };
-}
-
-
-function Card(){
+function Card() {
   const [page, setPage] = useState(1);
   const nextPage = () => {
     setPage((prev) => prev + 1);
@@ -86,68 +68,80 @@ function Card(){
   const previousPage = () => {
     setPage((prev) => prev - 1);
   };
-  const { data, isError, isLoading, isFetching, isSuccess } = useQuery(
+  const { data, isError, isLoading, isFetching } = useQuery(
     ["market", page],
     () => getMarket(page),
     {
-      staleTime: 3000, // ms
-      refetchInterval: 3000,
-      // initialData: initialPrice,
+      staleTime: 5000,
+      refetchInterval: 20000,
     }
   );
+
+  const isMobile = useBreakpointValue({ base: true, md: false });
+
   return (
-    <>
+    <Box>
       {isFetching && (
         <Spinner color="blue.500" position="fixed" top={10} right={10} />
       )}
-      <Table variant="simple">
-        <Thead>
-          <Tr>
-            <Th>Instrument</Th>
-            <Th>Last Price</Th>
-            <Th>24h % Change</Th>
-            <Th isNumeric>Total Volume</Th>
-            <Th isNumeric>Market Cap</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {isLoading && <Text>Loading...</Text>}
-          {isError && <Text>There was an error processing your request</Text>}
-          {isSuccess &&
-            data?.map((price: Price) => (
-              <Tr>
-                <Td>
-                  <Flex alignItems="center">
-                    <Image
-                      key={price.id}
-                      src={price.image}
-                      boxSize="24px"
-                      ignoreFallback={true}
-                    />
-
-                    <Text pl={2} fontWeight="bold" textTransform="capitalize">
-                      {price.id}
-                    </Text>
-                    <Badge ml={3}>{price.symbol}</Badge>
-                  </Flex>
-                </Td>
-                <Td>{formatNumber(price.current_price)}</Td>
-                <Td>
-                  <Percentage percent={price.price_change_percentage_24h} />
-                </Td>
-                <Td isNumeric>{formatNumber(price.total_volume)}</Td>
-                <Td isNumeric>{formatNumber(price.market_cap)}</Td>
-              </Tr>
-            ))}
-        </Tbody>
-      </Table>
-      <Stack padding={5} spacing={4} direction="row" align="center">
+      {isLoading && <Text>Loading...</Text>}
+      {isError && <Text>There was an error processing your request</Text>}
+      {data &&
+        data.map((price: Price) => (
+          <Box
+            key={price.id}
+            p={4}
+            mb={4}
+            borderWidth={1}
+            borderRadius="md"
+            boxShadow="sm"
+            overflow="hidden"
+          >
+            <Flex align="center" mb={2}>
+              <Image
+                src={price.image}
+                boxSize="24px"
+                alt={price.name}
+                mr={2}
+              />
+              <Text fontWeight="bold" fontSize="lg" textTransform="capitalize">
+                {price.name}
+              </Text>
+              <Badge ml={2}>{price.symbol.toUpperCase()}</Badge>
+            </Flex>
+            <Flex
+              justify="space-between"
+              flexDirection={isMobile ? "column" : "row"}
+            >
+              <Text padding={2}>
+                <strong>Price:</strong> {formatNumber(price.current_price)}
+              </Text>
+              <Text padding={2}>
+                <strong>24h Change:</strong>{" "}
+                <Percentage percent={price.price_change_percentage_24h} />
+              </Text>
+              <Text padding={2}>
+                <strong>Volume:</strong> {formatNumber(price.total_volume)}
+              </Text>
+              <Text padding={2}>
+                <strong>Market Cap:</strong> {formatNumber(price.market_cap)}
+              </Text>
+            </Flex>
+          </Box>
+        ))}
+      <Stack
+        padding={5}
+        spacing={4}
+        direction={{ base: "column", md: "row" }}
+        align="center"
+        justify="center"
+      >
         <Button
           colorScheme="blue"
           variant="outline"
-          size="lg"
+          size="md"
           onClick={previousPage}
-          disabled={page === 1 ? true : false}
+          disabled={page === 1}
         >
           Previous
         </Button>
@@ -155,23 +149,23 @@ function Card(){
         <Button
           colorScheme="blue"
           variant="outline"
-          size="lg"
+          size="md"
           onClick={nextPage}
         >
           Next
         </Button>
       </Stack>
-    </>
+    </Box>
   );
 }
 
-const queryClient = new QueryClient()
-const Home = ()=> {
+const queryClient = new QueryClient();
+const Home = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <Card />
     </QueryClientProvider>
-  )
-}
+  );
+};
 
 export default Home;

@@ -11,7 +11,7 @@ function SwitchTheme() {
           onClick={toggleColorMode}
           variant="outline"
           colorScheme="teal"
-          aria-label="Send email"
+          aria-label="color mode"
           icon={<SunIcon >
           
           </SunIcon>}
@@ -26,9 +26,18 @@ function App() {
     document.title = "Crypto Market"
   }, [])
   return (
-    <Container maxW="container.xl" centerContent>
+    <Container
+      maxW={["full", "container.sm", "container.md", "container.lg"]} // Responsive max width
+      centerContent
+      p={["2", "4", "6"]} // Padding adjusts for mobile and larger screens
+    >
       <SwitchTheme />
-      <Box padding="4" maxW="3xl">
+      <Box
+        padding={["2", "4"]}
+        maxW={["90%", "80%", "3xl"]} // Responsive width
+        fontSize={["sm", "md", "lg"]} // Responsive font size
+        textAlign="center" // Align text for smaller screens
+      >
         Market Crypto
       </Box>
       <Home />
